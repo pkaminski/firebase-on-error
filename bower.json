@@ -1,0 +1,24 @@
+{
+  "name": "firebase-on-error",
+  "main": "src/onerror.js",
+  "version": "0.1.0",
+  "homepage": "https://github.com/pkaminski/firebase-on-error",
+  "authors": [
+    "Piotr Kaminski"
+  ],
+  "description": "Firebase global error callbacks",
+  "keywords": [
+    "firebase"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "firebase": "^1.1"
+  }
+}

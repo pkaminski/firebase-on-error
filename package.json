@@ -1,0 +1,31 @@
+{
+  "name": "firebase-on-error",
+  "version": "0.1.0",
+  "description": "Firebase global error callbacks",
+  "scripts": {
+    "setup": "rm -rf bower_components; rm -rf node_modules; npm install; bower install;"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:pkaminski/firebase-on-error.git"
+  },
+  "keywords": [
+    "firebase"
+  ],
+  "author": "Piotr Kaminski",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pkaminski/firebase-on-error/issues"
+  },
+  "homepage": "https://github.com/pkaminski/firebase-on-error",
+  "devDependencies": {
+    "grunt": "~0.4.4",
+    "grunt-contrib-clean": "~0.5.0",
+    "matchdep": "~0.3.0",
+    "karma": "~0.12.9",
+    "karma-jasmine": "~0.2.0",
+    "karma-phantomjs-launcher": "~0.1.4",
+    "phantomjs": "~1.9.7-4",
+    "grunt-karma": "~0.8.2"
+  }
+}

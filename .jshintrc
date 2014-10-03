@@ -1,0 +1,27 @@
+{
+  "bitwise": true,
+  "browser": true,
+  "camelcase": true,
+  "devel": true,
+  "eqeqeq": true,
+  "indent": 2,
+  "latedef": "nofunc",
+  "maxlen": 100,
+  "newcap": true,
+  "noarg": true,
+  "quotmark": "single",
+  "strict": true,
+  "trailing": true,
+  "undef": true,
+  "unused": "vars",
+  "globals": {
+    "Firebase": false,
+
+    "describe": false,
+    "beforeEach": false,
+    "afterEach": false,
+    "it": false,
+    "expect": false,
+    "jasmine": false
+  }
+}
