@@ -69,7 +69,9 @@
   function interceptErrorCallbacks() {
     if (interceptInPlace) return;
     wrapOnComplete(Firebase.prototype, {
-      auth: 1, set: 1, update: 1, setWithPriority: 2, setPriority: 1, transaction: 1
+      auth: 1, authWithCustomToken: 1, authAnonymously: 0, authWithPassword: 1,
+      authWithOAuthPopup: 1, authWithOAuthRedirect: 1, authWithOAuthToken: 2,
+      set: 1, update: 1, setWithPriority: 2, setPriority: 1, transaction: 1
       // 'remove' and 'push' delegate to 'set'; 'on' and 'once' will be wrapped by wrapQuery below
     });
     var onDisconnect = Firebase.prototype.onDisconnect;

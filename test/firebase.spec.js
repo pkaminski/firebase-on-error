@@ -46,6 +46,78 @@ describe('Firebase', function() {
       fb.auth('', errorCallback);
     });
 
+    it('should intercept authWithCustomToken errors', function(done) {
+      globalCallback = Firebase.onError(done);
+      fb.authWithCustomToken('');
+    });
+
+    it('should intercept authWithCustomToken errors with a user callback', function(done) {
+      var errorCallback = jasmine.createSpy();
+      globalCallback = Firebase.onError(function() {
+        expect(errorCallback).toHaveBeenCalled();
+        done();
+      });
+      fb.authWithCustomToken('', errorCallback);
+    });
+
+    it('should intercept authAnonymously errors', function(done) {
+      globalCallback = Firebase.onError(done);
+      fb.authAnonymously();
+    });
+
+    it('should intercept authAnonymously errors with a user callback', function(done) {
+      var errorCallback = jasmine.createSpy();
+      globalCallback = Firebase.onError(function() {
+        expect(errorCallback).toHaveBeenCalled();
+        done();
+      });
+      fb.authAnonymously(errorCallback);
+    });
+
+    it('should intercept authWithPassword errors', function(done) {
+      globalCallback = Firebase.onError(done);
+      fb.authWithPassword({email: 'foo@example.com', password: 'bar'});
+    });
+
+    it('should intercept authWithPassword errors with a user callback', function(done) {
+      var errorCallback = jasmine.createSpy();
+      globalCallback = Firebase.onError(function() {
+        expect(errorCallback).toHaveBeenCalled();
+        done();
+      });
+      fb.authWithPassword({email: 'foo@example.com', password: 'bar'}, errorCallback);
+    });
+
+    it('should intercept authWithOAuthPopup errors', function(done) {
+      globalCallback = Firebase.onError(done);
+      fb.authWithOAuthPopup('twitter');
+    });
+
+    it('should intercept authWithOAuthPopup errors with a user callback', function(done) {
+      var errorCallback = jasmine.createSpy();
+      globalCallback = Firebase.onError(function() {
+        expect(errorCallback).toHaveBeenCalled();
+        done();
+      });
+      fb.authWithOAuthPopup('twitter', errorCallback);
+    });
+
+    // Can't test authWithOAuthRedirect
+
+    it('should intercept authWithOAuthToken errors', function(done) {
+      globalCallback = Firebase.onError(done);
+      fb.authWithOAuthToken('twitter', '');
+    });
+
+    it('should intercept authWithOAuthToken errors with a user callback', function(done) {
+      var errorCallback = jasmine.createSpy();
+      globalCallback = Firebase.onError(function() {
+        expect(errorCallback).toHaveBeenCalled();
+        done();
+      });
+      fb.authWithOAuthToken('twitter', '', errorCallback);
+    });
+
     it('should intercept set errors', function(done) {
       globalCallback = Firebase.onError(done);
       fb.child('forbidden').set(false);
