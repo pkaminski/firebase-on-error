@@ -57,7 +57,7 @@
 
   function wrapQuery(query) {
     wrapOnComplete(query, {on: 2, once: 2});
-    ['limit', 'startAt', 'endAt'].forEach(function(method) {
+    ['limit', 'limitToFirst', 'limitToLast', 'startAt', 'endAt'].forEach(function(method) {
       var wrappedMethod = query[method];
       query[method] = function() {
         return wrapQuery(wrappedMethod.apply(this, arguments));
