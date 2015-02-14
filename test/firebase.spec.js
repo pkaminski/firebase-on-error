@@ -234,6 +234,8 @@ describe('Firebase', function() {
       fb.child('forbidden').transaction(function() {return null;}, errorCallback);
     });
 
+    // TODO: test user/password methods
+
     it('should intercept on errors', function(done) {
       globalCallback = Firebase.onError(done);
       fb.child('forbidden').on('value', noop);
@@ -258,9 +260,44 @@ describe('Firebase', function() {
       fb.child('forbidden').endAt().on('value', noop);
     });
 
+    it('should intercept on errors after equalTo', function(done) {
+      globalCallback = Firebase.onError(done);
+      fb.child('forbidden').equalTo(null).on('value', noop);
+    });
+
+    it('should intercept on errors after orderByChild', function(done) {
+      globalCallback = Firebase.onError(done);
+      fb.child('forbidden').orderByChild('foo').on('value', noop);
+    });
+
+    it('should intercept on errors after orderByKey', function(done) {
+      globalCallback = Firebase.onError(done);
+      fb.child('forbidden').orderByKey().on('value', noop);
+    });
+
+    it('should intercept on errors after orderByValue', function(done) {
+      globalCallback = Firebase.onError(done);
+      fb.child('forbidden').orderByValue().on('value', noop);
+    });
+
+    it('should intercept on errors after orderByPriority', function(done) {
+      globalCallback = Firebase.onError(done);
+      fb.child('forbidden').orderByPriority().on('value', noop);
+    });
+
     it('should intercept on errors after limit', function(done) {
       globalCallback = Firebase.onError(done);
       fb.child('forbidden').limit(1).on('value', noop);
+    });
+
+    it('should intercept on errors after limitToFirst', function(done) {
+      globalCallback = Firebase.onError(done);
+      fb.child('forbidden').limitToFirst(1).on('value', noop);
+    });
+
+    it('should intercept on errors after limitToLast', function(done) {
+      globalCallback = Firebase.onError(done);
+      fb.child('forbidden').limitToLast(1).on('value', noop);
     });
 
     it('should intercept once errors', function(done) {
@@ -287,9 +324,44 @@ describe('Firebase', function() {
       fb.child('forbidden').endAt().once('value', noop);
     });
 
+    it('should intercept once errors after equalTo', function(done) {
+      globalCallback = Firebase.onError(done);
+      fb.child('forbidden').equalTo(null).once('value', noop);
+    });
+
+    it('should intercept once errors after orderByChild', function(done) {
+      globalCallback = Firebase.onError(done);
+      fb.child('forbidden').orderByChild('foo').once('value', noop);
+    });
+
+    it('should intercept once errors after orderByKey', function(done) {
+      globalCallback = Firebase.onError(done);
+      fb.child('forbidden').orderByKey().once('value', noop);
+    });
+
+    it('should intercept once errors after orderByValue', function(done) {
+      globalCallback = Firebase.onError(done);
+      fb.child('forbidden').orderByValue().once('value', noop);
+    });
+
+    it('should intercept once errors after orderByPriority', function(done) {
+      globalCallback = Firebase.onError(done);
+      fb.child('forbidden').orderByPriority().once('value', noop);
+    });
+
     it('should intercept once errors after limit', function(done) {
       globalCallback = Firebase.onError(done);
       fb.child('forbidden').limit(1).once('value', noop);
+    });
+
+    it('should intercept once errors after limitToFirst', function(done) {
+      globalCallback = Firebase.onError(done);
+      fb.child('forbidden').limitToFirst(1).once('value', noop);
+    });
+
+    it('should intercept once errors after limitToLast', function(done) {
+      globalCallback = Firebase.onError(done);
+      fb.child('forbidden').limitToLast(1).once('value', noop);
     });
 
     it('should intercept onDisconnect.set errors', function(done) {

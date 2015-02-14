@@ -57,7 +57,8 @@
 
   function wrapQuery(query) {
     wrapOnComplete(query, {on: 2, once: 2});
-    ['limit', 'limitToFirst', 'limitToLast', 'startAt', 'endAt'].forEach(function(method) {
+    ['orderByChild', 'orderByKey', 'orderByValue', 'orderByPriority', 'limit', 'limitToFirst',
+     'limitToLast', 'startAt', 'endAt', 'equalTo'].forEach(function(method) {
       var wrappedMethod = query[method];
       query[method] = function() {
         return wrapQuery(wrappedMethod.apply(this, arguments));
@@ -71,8 +72,9 @@
     wrapOnComplete(Firebase.prototype, {
       auth: 1, authWithCustomToken: 1, authAnonymously: 0, authWithPassword: 1,
       authWithOAuthPopup: 1, authWithOAuthRedirect: 1, authWithOAuthToken: 2,
-      set: 1, update: 1, setWithPriority: 2, setPriority: 1, transaction: 1
+      set: 1, update: 1, setWithPriority: 2, setPriority: 1, transaction: 1,
       // 'remove' and 'push' delegate to 'set'; 'on' and 'once' will be wrapped by wrapQuery below
+      createUser: 1, changeEmail: 1, changePassword: 1, removeUser: 1, resetPassword: 1
     });
     var onDisconnect = Firebase.prototype.onDisconnect;
     Firebase.prototype.onDisconnect = function() {
