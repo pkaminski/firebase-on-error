@@ -11,8 +11,8 @@
    * error occurred, unless your onComplete function for that call returns IGNORE_ERROR.  Errors
    * that occur on calls made before the first callback is registered will not be captured.
    * @param  {Function} callback The function to call back when an error occurs.  It will be passed
-   *     the Firebase Error, the reference (or query or onDisconnect instance), and the method name
-   *     as arguments.
+   *     the Firebase Error, the reference (or query or onDisconnect instance), the method name, and
+   *     the arguments passed to the Firebase function call as arguments.
    * @return {Function} The callback function.
    */
   Firebase.onError = function(callback) {
@@ -44,7 +44,7 @@
           var onCompleteCallbackResult = onComplete.apply(this, arguments);
           if (error && onCompleteCallbackResult !== Firebase.IGNORE_ERROR) {
             errorCallbacks.forEach(function(callback) {
-              callback(error, ref, methodName);
+              callback(error, ref, methodName, args);
             });
           }
         };
