@@ -1,9 +1,9 @@
 firebase-on-error
 =================
 
-This module allows you to register callbacks to be notified when any Firebase operation reports an error.  This is useful when your app has no error recovery procedure beyond asking the user to reload the page (which is not a terrible approach, since Firebase is pretty reliable!).
+This module allows you to register callbacks to be notified when any Firebase operation reports an error.  This is useful when your app has no error recovery procedure beyond asking the user to reload the page (which is not a terrible approach, since Firebase is pretty reliable!).  You can also register callbacks to be notified when a write is being slow, so you can warn the user that their connection is bad and not all changes have yet been saved.
 
-The module adds two new public functions to the Firebase global class:
+The module adds four new public functions to the Firebase global class:
 
 ```javascript
 /**
@@ -22,4 +22,24 @@ Firebase.onError = function(callback) {...}
  * @param  {Function} callback A previously registered callback.
  */
 Firebase.offError = function(callback) {...}
+
+/**
+ * Registers a global callback that will be invoked whenever a Firebase API write function doesn't
+ * complete fast enough.  The callback will be invoked every time the number of outstanding slow
+ * calls changes (either up or down).  Write functions in Firebase are set, update, remove, push,
+ * setWithPriority, setPriority, and transaction.
+ * @param  {number} timeout The number of milliseconds a write function is allowed to run before
+ *     it's added to the count of slow ones.
+ * @param  {Function} callback The callback to invoke whenever the count of outstanding slow calls
+ *     changes.  The current count is passed as the only argument to the callback.
+ * @return {Function} The callback function, for convenience.
+ */
+Firebase.onSlowWrite = function(timeout, callback) {...}
+
+/**
+ * Unregisters a global slow write callback.
+ * @param  {Function} callback A previously registered callback.
+ */
+Firebase.offSlowWrite = function(callback) {...}
+
 ```
