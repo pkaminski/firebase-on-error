@@ -1,6 +1,6 @@
 {
   "name": "firebase-on-error",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Firebase global error callbacks",
   "scripts": {
     "setup": "rm -rf bower_components; rm -rf node_modules; npm install; bower install;"
