@@ -89,6 +89,20 @@
               if (timeout.counted) timeout.record.callback(--timeout.record.count);
             });
           }
+          if (error) {
+            var path = decodeURIComponent(ref.toString().slice(ref.root().toString().length - 1));
+            var description = 'Firebase ' + methodName + '(' + path + '): ' + error.message;
+            var extra = {description: description, recoverable: error.recoverable};
+            args.forEach(function(arg, i) {
+              if (typeof arg === 'function') return;
+              var value = '' + arg;
+              if (arg !== null && typeof arg === 'object') {
+                try {value = JSON.stringify(arg);} catch (e) {}
+              }
+              extra['arg_' + i] = value;
+            });
+            error.extra = extra;
+          }
           var onCompleteCallbackResult = onComplete.apply(this, arguments);
           if (error && onCompleteCallbackResult !== Firebase.IGNORE_ERROR) {
             errorCallbacks.forEach(function(callback) {
