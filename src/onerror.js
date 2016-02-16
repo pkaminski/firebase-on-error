@@ -90,6 +90,9 @@
             });
           }
           if (error) {
+            if (typeof error === 'string' || error instanceof String) {
+              error = new Error(error);
+            }
             var path = decodeURIComponent(ref.toString().slice(ref.root().toString().length - 1));
             var description = 'Firebase ' + methodName + '(' + path + '): ' + error.message;
             var extra = {description: description, recoverable: error.recoverable};
