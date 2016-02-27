@@ -1,15 +1,15 @@
 (function() {
   'use strict';
 
-  Firebase.IGNORE_ERROR = {};  // unique marker object
+  Firebase.IGNORE_ERROR = function() {return Firebase.IGNORE_ERROR;};  // unique marker object
   var errorCallbacks = [], slowWriteCallbackRecords = [];
   var interceptInPlace = false;
   var noop = function() {};
 
   /**
    * Registers a global callback that will be invoked whenever any Firebase API indicates that an
-   * error occurred, unless your onComplete function for that call returns IGNORE_ERROR.  Errors
-   * that occur on calls made before the first callback is registered will not be captured.
+   * error occurred, unless your onComplete function for that call returns (or is) IGNORE_ERROR.
+   * Errors that occur on calls made before the first callback is registered will not be captured.
    * @param  {Function} callback The function to call back when an error occurs.  It will be passed
    *     the Firebase Error, the reference (or query or onDisconnect instance), the method name, and
    *     the arguments passed to the Firebase function call as arguments.
@@ -112,11 +112,45 @@
             });
           }
         };
+        while (args.length < onCompleteArgIndex) args.push(void 0);
         args.splice(onCompleteArgIndex, hasOnComplete ? 1 : 0, wrappedOnComplete);
-        return wrappedMethod.apply(this, args);
+        var promise = wrappedMethod.apply(this, args);
+        if (window.Promise && !promise.finally) {
+          var proto = Object.getPrototypeOf(promise);
+          if (proto.then) {
+            proto.finally = finallyPolyfill;
+          } else {
+            promise.finally = finallyPolyfill;
+          }
+        }
+        return promise;
       };
     });
     return target;
+  }
+
+  function finallyPolyfill(callback) {
+    return this.then(function(value) {
+      return Promise.resolve(callback()).then(function() {return value;});
+    }, function(error) {
+      return Promise.resolve(callback()).then(function() {return Promise.reject(error);});
+    });
+  }
+
+  function wrapPushDummyCallback(target) {
+    var onCompleteArgIndex = 1;
+    var wrappedMethod = target.push;
+    target.push = function() {
+      var args = Array.prototype.slice.call(arguments);
+      var value = arguments[0];
+      if (typeof value !== 'undefined' && value !== null) {
+        var onComplete = arguments[onCompleteArgIndex];
+        var hasOnComplete = typeof onComplete === 'function' || typeof onComplete === 'undefined';
+        if (typeof onComplete !== 'function') onComplete = noop;
+        args.splice(onCompleteArgIndex, hasOnComplete ? 1 : 0, onComplete);
+      }
+      return wrappedMethod.apply(this, args);
+    };
   }
 
   function wrapQuery(query) {
@@ -140,8 +174,12 @@
     });
     wrapOnComplete(Firebase.prototype, {
       set: 1, update: 1, setWithPriority: 2, setPriority: 1, transaction: 1,
-      // 'remove' and 'push' delegate to 'set'; 'on' and 'once' will be wrapped by wrapQuery below
+      // 'remove' delegates to 'set'; 'on' and 'once' will be wrapped by wrapQuery below
     }, true);
+    // 'remove' and 'push' delegate to 'set', but we need to make sure to pass in a callback every
+    // time so that the promise they return will have a dummy handler attached and won't raise a
+    // top-level exception if there's an error.
+    wrapPushDummyCallback(Firebase.prototype);
     var onDisconnect = Firebase.prototype.onDisconnect;
     Firebase.prototype.onDisconnect = function() {
       return wrapOnComplete(onDisconnect.apply(this, arguments), {

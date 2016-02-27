@@ -300,6 +300,24 @@ describe('Firebase', function() {
       fb.child('forbidden').limitToLast(1).on('value', noop);
     });
 
+    it('should return once value', function(done) {
+      globalCallback = Firebase.onError(function() {
+        expect(true).toBe(false);
+      });
+      fb.child('allowed').once('value', function(snap) {
+        done();
+      });
+    });
+
+    it('should return once promise', function(done) {
+      globalCallback = Firebase.onError(function(error) {
+        expect(true).toBe(false);
+      });
+      fb.child('allowed').once('value').then(function(snap) {
+        done();
+      });
+    });
+
     it('should intercept once errors', function(done) {
       globalCallback = Firebase.onError(done);
       fb.child('forbidden').once('value', noop);

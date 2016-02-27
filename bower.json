@@ -1,7 +1,7 @@
 {
   "name": "firebase-on-error",
   "main": "src/onerror.js",
-  "version": "0.2.6",
+  "version": "0.3.0",
   "homepage": "https://github.com/pkaminski/firebase-on-error",
   "authors": [
     "Piotr Kaminski"
@@ -19,6 +19,6 @@
     "tests"
   ],
   "dependencies": {
-    "firebase": "2.3.x"
+    "firebase": "2.4.x"
   }
 }
