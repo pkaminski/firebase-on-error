@@ -70,7 +70,7 @@
         var hasOnComplete = typeof onComplete === 'function' || typeof onComplete === 'undefined';
         if (typeof onComplete !== 'function') onComplete = noop;
         var args = Array.prototype.slice.call(arguments);
-        var ref = this;
+        var target = this;
         var timeouts;
         if (isWrite) {
           timeouts = slowWriteCallbackRecords.map(function(record) {
@@ -90,7 +90,9 @@
             });
           }
           if (error) {
-            var path = decodeURIComponent(ref.toString().slice(ref.root().toString().length - 1));
+            var ref = (target.ref ? target.ref() : target);
+            var path = decodeURIComponent(
+              ref.toString().slice(ref.root ? ref.root().toString().length - 1 : 0));
             var description = 'Firebase ' + methodName + '(' + path + '): ' + error.message;
             var extra = {description: description, recoverable: error.recoverable};
             args.forEach(function(arg, i) {
@@ -106,7 +108,7 @@
           var onCompleteCallbackResult = onComplete.apply(this, arguments);
           if (error && onCompleteCallbackResult !== Firebase.IGNORE_ERROR) {
             errorCallbacks.forEach(function(callback) {
-              callback(error, ref, methodName, args);
+              callback(error, target, methodName, args);
             });
           }
         };
