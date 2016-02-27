@@ -90,6 +90,9 @@
             });
           }
           if (error) {
+            if (typeof error === 'string' || error instanceof String) {
+              error = new Error(error);
+            }
             var ref = (target.ref ? target.ref() : target);
             var path = decodeURIComponent(
               ref.toString().slice(ref.root ? ref.root().toString().length - 1 : 0));
