@@ -3,6 +3,8 @@
 
   Firebase.IGNORE_ERROR = function() {return Firebase.IGNORE_ERROR;};  // unique marker object
   var errorCallbacks = [], slowWriteCallbackRecords = [];
+  var simulatedTokenGeneratorFn, maxSimulationDuration = 5000;
+  var consoleLogs = [], consoleIntercepted = false;
   var interceptInPlace = false;
   var noop = function() {};
 
@@ -12,7 +14,8 @@
    * Errors that occur on calls made before the first callback is registered will not be captured.
    * @param  {Function} callback The function to call back when an error occurs.  It will be passed
    *     the Firebase Error, the reference (or query or onDisconnect instance), the method name, and
-   *     the arguments passed to the Firebase function call as arguments.
+   *     the arguments passed to the Firebase function call as arguments.  The error will be
+   *     augmented with additional information in the `extra` property.
    * @return {Function} The callback function.
    */
   Firebase.onError = function(callback) {
@@ -61,6 +64,41 @@
     }
   };
 
+  /**
+   * Requests that extra debugging information be provided for permission denied errors.  This works
+   * by obtaining a special auth token (via the callback) that sets the simulated and debug flags,
+   * and reissuing the failing request on a separate connection, then recording the debug
+   * information that Firebase sends back.
+   * @param  {Function} simulatedTokenGenerator A callback that will be invoked with the uid of the
+   *     user for whom permission was denied, and that returns a promise that resolves to a Firebase
+   *     auth token for that uid with simulated and debug set to true.  You'll likely need to be
+   *     running your own server loaded with your Firebase master secret to securely generate such a
+   *     token.  You can generate tokens in Node.js like this, for example:
+   *       var FirebaseTokenGenerator = require("firebase-token-generator");
+   *       var tokenGenerator = new FirebaseTokenGenerator("<YOUR_FIREBASE_SECRET>");
+   *       var token = tokenGenerator.createToken({uid: uid}, {simulate: true, debug: true});
+   * @param  {Number} maxSimulatedCallDuration The maximum duration in milliseconds to allow for
+   *     the simulated call to complete.  The callback and promise on the original call won't be
+   *     resolved until the simulation finishes one way or another.  Defaults to 5 seconds.
+   */
+  Firebase.debugPermissionDeniedErrors = function(
+      simulatedTokenGenerator, maxSimulatedCallDuration) {
+    interceptErrorCallbacks();
+    simulatedTokenGeneratorFn = simulatedTokenGenerator;
+    if (maxSimulatedCallDuration) maxSimulationDuration = maxSimulatedCallDuration;
+    if (!consoleIntercepted) {
+      var originalLog = console.log;
+      console.log = function() {
+        var message = Array.prototype.join.call(arguments, ' ');
+        if (/^(FIREBASE: \n?)+/.test(message)) {
+          consoleLogs.push(message.replace(/^(FIREBASE: \n?)+/, ''));
+        }
+        return originalLog.apply(console, arguments);
+      };
+      consoleIntercepted = true;
+    }
+  };
+
   function wrapOnComplete(target, methods, isWrite) {
     Object.keys(methods).forEach(function(methodName) {
       var onCompleteArgIndex = methods[methodName];
@@ -82,13 +120,18 @@
             return timeout;
           });
         }
+
         var wrappedOnComplete = function(error) {
+          var callbackFinished = false, self = this, simulationTimeout;
+          var onCompleteArgs = Array.prototype.slice.call(arguments);
+
           if (isWrite) {
             timeouts.forEach(function(timeout) {
               clearTimeout(timeout.handle);
               if (timeout.counted) timeout.record.callback(--timeout.record.count);
             });
           }
+
           if (error) {
             if (typeof error === 'string' || error instanceof String) {
               error = new Error(error);
@@ -107,18 +150,69 @@
               extra['arg_' + i] = value;
             });
             error.extra = extra;
+
+            var code = error.code || error.message;
+            if (simulatedTokenGeneratorFn && code && code.toLowerCase() === 'permission_denied') {
+              simulationTimeout = setTimeout(function() {
+                if (!error.extra.debug) error.extra.debug = 'Simulated call timed out';
+                finishCallback();
+              }, maxSimulationDuration);
+              var auth = target.getAuth();
+              try {
+                simulatedTokenGeneratorFn(auth && auth.uid || '').then(function(token) {
+                  var simulatedFirebase = new Firebase(
+                    decodeURIComponent(target.toString()), 'simulator');
+                  simulatedFirebase.unauth();
+                  return simulatedFirebase.authWithCustomToken(
+                    token, {remember: 'none'}
+                  ).then(function() {
+                    consoleLogs = [];
+                    var simulatedArgs = args.slice();
+                    simulatedArgs.splice(
+                      onCompleteArgIndex, hasOnComplete ? 1 : 0, finishSimulation);
+                    wrappedMethod.apply(simulatedFirebase, simulatedArgs);
+                    function finishSimulation() {
+                      simulatedFirebase.unauth();
+                      error.extra.debug = consoleLogs.join('\n');
+                      finishCallback();
+                    }
+                  }, function(e) {
+                    error.extra.debug = 'Unable to authenticate with simulator token: ' + e;
+                    finishCallback();
+                  });
+                }).catch(function(e) {
+                  error.extra.debug = 'Error running simulation: ' + e;
+                  finishCallback();
+                });
+              } catch (e) {
+                error.extra.debug = 'Error obtaining simulator token: ' + e;
+                finishCallback();
+              }
+            }
           }
-          var onCompleteCallbackResult = onComplete.apply(this, arguments);
-          if (error && onCompleteCallbackResult !== Firebase.IGNORE_ERROR) {
-            errorCallbacks.forEach(function(callback) {
-              callback(error, target, methodName, args);
-            });
+
+          if (!simulationTimeout) finishCallback();
+
+          function finishCallback() {
+            if (simulationTimeout) {
+              clearTimeout(simulationTimeout);
+              simulationTimeout = null;
+            }
+            if (callbackFinished) return;
+            callbackFinished = true;
+            var onCompleteCallbackResult = onComplete.apply(self, onCompleteArgs);
+            if (error && onCompleteCallbackResult !== Firebase.IGNORE_ERROR) {
+              errorCallbacks.forEach(function(callback) {
+                callback(error, target, methodName, args);
+              });
+            }
           }
         };
+
         while (args.length < onCompleteArgIndex) args.push(void 0);
         args.splice(onCompleteArgIndex, hasOnComplete ? 1 : 0, wrappedOnComplete);
         var promise = wrappedMethod.apply(this, args);
-        if (window.Promise && !promise.finally) {
+        if (window.Promise && promise && promise.then && !promise.finally) {
           var proto = Object.getPrototypeOf(promise);
           if (proto.then) {
             proto.finally = finallyPolyfill;

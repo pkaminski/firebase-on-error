@@ -44,4 +44,24 @@ Firebase.onSlowWrite = function(timeout, callback) {...}
  */
 Firebase.offSlowWrite = function(callback) {...}
 
+/**
+ * Requests that extra debugging information be provided for permission denied errors.  This works
+ * by obtaining a special auth token (via the callback) that sets the simulated and debug flags,
+ * and reissuing the failing request on a separate connection, then recording the debug
+ * information that Firebase sends back.
+ * @param  {Function} simulatedTokenGenerator A callback that will be invoked with the uid of the
+ *     user for whom permission was denied, and that returns a promise that resolves to a Firebase
+ *     auth token for that uid with simulated and debug set to true.  You'll likely need to be
+ *     running your own server loaded with your Firebase master secret to securely generate such a
+ *     token.  You can generate tokens in Node.js like this, for example:
+ *       var FirebaseTokenGenerator = require("firebase-token-generator");
+ *       var tokenGenerator = new FirebaseTokenGenerator("<YOUR_FIREBASE_SECRET>");
+ *       var token = tokenGenerator.createToken({uid: uid}, {simulate: true, debug: true});
+ * @param  {Number} maxSimulatedCallDuration The maximum duration in milliseconds to allow for
+ *     the simulated call to complete.  The callback and promise on the original call won't be
+ *     resolved until the simulation finishes one way or another.  Defaults to 5 seconds.
+ */
+Firebase.debugPermissionDeniedErrors = function(
+    simulatedTokenGenerator, maxSimulatedCallDuration) {...}
+
 ```

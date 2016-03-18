@@ -1,6 +1,7 @@
 describe('Firebase', function() {
   'use strict';
   var fb;
+  var simulatorToken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzaW11bGF0ZSI6dHJ1ZSwiZGVidWciOnRydWUsInYiOjAsImQiOnsidWlkIjoidGVzdCJ9LCJpYXQiOjE0NTgyOTcyOTR9.mWY_83jcMcome_9Dz-Yg9Ms4dpswaFIvp869T9EmZeU';
   function noop() {}
 
   beforeEach(function() {
@@ -443,6 +444,34 @@ describe('Firebase', function() {
       var errorCallback = jasmine.createSpy('errorCallback');
       globalCallback = Firebase.onError(errorCallback);
       fb.child('forbidden').onDisconnect().cancel(done);
+    });
+
+    it('should be able to debug permission denied errors on write calls', function(done) {
+      Firebase.debugPermissionDeniedErrors(function(uid) {
+        return {then: function(fn) {return fn(simulatorToken);}};
+      });
+      var errorCallback = jasmine.createSpy();
+      globalCallback = Firebase.onError(function() {
+        expect(errorCallback).toHaveBeenCalled();
+        expect(errorCallback.calls.argsFor(0)[0].extra.debug).toMatch(/Write was denied/);
+        Firebase.debugPermissionDeniedErrors(null);
+        done();
+      });
+      fb.child('forbidden').set(false, errorCallback);
+    });
+
+    it('should be able to debug permission denied errors on on calls', function(done) {
+      Firebase.debugPermissionDeniedErrors(function(uid) {
+        return {then: function(fn) {return fn(simulatorToken);}};
+      });
+      var errorCallback = jasmine.createSpy();
+      globalCallback = Firebase.onError(function() {
+        expect(errorCallback).toHaveBeenCalled();
+        expect(errorCallback.calls.argsFor(0)[0].extra.debug).toMatch(/Read was denied/);
+        Firebase.debugPermissionDeniedErrors(null);
+        done();
+      });
+      fb.child('forbidden').on('value', noop, errorCallback);
     });
 
   });
