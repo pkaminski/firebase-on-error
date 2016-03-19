@@ -48,7 +48,7 @@ Firebase.offSlowWrite = function(callback) {...}
  * Requests that extra debugging information be provided for permission denied errors.  This works
  * by obtaining a special auth token (via the callback) that sets the simulated and debug flags,
  * and reissuing the failing request on a separate connection, then recording the debug
- * information that Firebase sends back.
+ * information that Firebase sends back.  Requires Promise to be available in the browser.
  * @param  {Function} simulatedTokenGenerator A callback that will be invoked with the uid of the
  *     user for whom permission was denied, and that returns a promise that resolves to a Firebase
  *     auth token for that uid with simulated and debug set to true.  You'll likely need to be

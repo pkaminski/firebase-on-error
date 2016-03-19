@@ -3,7 +3,7 @@
 
   Firebase.IGNORE_ERROR = function() {return Firebase.IGNORE_ERROR;};  // unique marker object
   var errorCallbacks = [], slowWriteCallbackRecords = [];
-  var simulatedTokenGeneratorFn, maxSimulationDuration = 5000;
+  var simulatedTokenGeneratorFn, maxSimulationDuration = 5000, simulationInProgress = false;
   var consoleLogs = [], consoleIntercepted = false;
   var interceptInPlace = false;
   var noop = function() {};
@@ -109,6 +109,7 @@
         if (typeof onComplete !== 'function') onComplete = noop;
         var args = Array.prototype.slice.call(arguments);
         var target = this;
+        var simulationPromise;
         var timeouts;
         if (isWrite) {
           timeouts = slowWriteCallbackRecords.map(function(record) {
@@ -121,7 +122,7 @@
           });
         }
 
-        var wrappedOnComplete = function(error) {
+        function wrappedOnComplete(error) {
           var callbackFinished = false, self = this, simulationTimeout;
           var onCompleteArgs = Array.prototype.slice.call(arguments);
 
@@ -152,41 +153,51 @@
             error.extra = extra;
 
             var code = error.code || error.message;
-            if (simulatedTokenGeneratorFn && code && code.toLowerCase() === 'permission_denied') {
-              simulationTimeout = setTimeout(function() {
-                if (!error.extra.debug) error.extra.debug = 'Simulated call timed out';
-                finishCallback();
-              }, maxSimulationDuration);
-              var auth = target.getAuth();
-              try {
-                simulatedTokenGeneratorFn(auth && auth.uid || '').then(function(token) {
-                  var simulatedFirebase = new Firebase(
-                    decodeURIComponent(target.toString()), 'simulator');
+            if (window.Promise && simulatedTokenGeneratorFn && maxSimulationDuration && code &&
+                code.toLowerCase() === 'permission_denied') {
+              if (simulationInProgress) {
+                error.extra.debug = 'Another simulated call was already in progress';
+              } else {
+                simulationTimeout = setTimeout(function() {
+                  if (!error.extra.debug) error.extra.debug = 'Simulated call timed out';
+                  finishCallback();
+                }, maxSimulationDuration);
+                simulationInProgress = true;
+                consoleLogs = [];
+                var auth = ref.getAuth();
+                var simulatedFirebase;
+                simulationPromise = Promise.resolve().then(function() {
+                  return simulatedTokenGeneratorFn(auth && auth.uid || '');
+                }).then(function(token) {
+                  simulatedFirebase = new Firebase(
+                    decodeURIComponent(target.toString()), 'firebase-on-error');
                   simulatedFirebase.unauth();
-                  return simulatedFirebase.authWithCustomToken(
-                    token, {remember: 'none'}
-                  ).then(function() {
-                    consoleLogs = [];
-                    var simulatedArgs = args.slice();
-                    simulatedArgs.splice(
-                      onCompleteArgIndex, hasOnComplete ? 1 : 0, finishSimulation);
-                    wrappedMethod.apply(simulatedFirebase, simulatedArgs);
-                    function finishSimulation() {
-                      simulatedFirebase.unauth();
-                      error.extra.debug = consoleLogs.join('\n');
-                      finishCallback();
-                    }
-                  }, function(e) {
-                    error.extra.debug = 'Unable to authenticate with simulator token: ' + e;
-                    finishCallback();
-                  });
+                  return simulatedFirebase.authWithCustomToken.original.call(
+                    simulatedFirebase, token, noop, {remember: 'none'});
+                }).then(function() {
+                  if (methodName === 'on') wrappedMethod = target.once.original || target.once;
+                  var simulatedArgs = args.slice();
+                  simulatedArgs[onCompleteArgIndex] = noop;
+                  return wrappedMethod.apply(simulatedFirebase, simulatedArgs);
+                }).then(function() {
+                  error.extra.debug =
+                    'Unable to reproduce permission denied error in simulation';
+                }, function(e) {
+                  var code = e.code || e.message;
+                  if (code && code.toLowerCase() === 'permission_denied') {
+                    error.extra.debug = consoleLogs.join('\n');
+                  } else {
+                    error.extra.debug = 'Got a different error in simulation: ' + e;
+                  }
+                }).then(function() {
+                  simulatedFirebase.unauth();
+                  finishCallback();
                 }).catch(function(e) {
                   error.extra.debug = 'Error running simulation: ' + e;
                   finishCallback();
+                }).then(function() {
+                  return Promise.reject(error);
                 });
-              } catch (e) {
-                error.extra.debug = 'Error obtaining simulator token: ' + e;
-                finishCallback();
               }
             }
           }
@@ -197,6 +208,7 @@
             if (simulationTimeout) {
               clearTimeout(simulationTimeout);
               simulationTimeout = null;
+              simulationInProgress = false;
             }
             if (callbackFinished) return;
             callbackFinished = true;
@@ -207,11 +219,17 @@
               });
             }
           }
-        };
+        }
 
         while (args.length < onCompleteArgIndex) args.push(void 0);
         args.splice(onCompleteArgIndex, hasOnComplete ? 1 : 0, wrappedOnComplete);
         var promise = wrappedMethod.apply(this, args);
+        if (window.Promise && promise && promise.catch) {
+          promise = promise.catch(function(e) {
+            if (simulationPromise) return simulationPromise;
+            return Promise.reject(e);
+          });
+        }
         if (window.Promise && promise && promise.then && !promise.finally) {
           var proto = Object.getPrototypeOf(promise);
           if (proto.then) {
@@ -222,6 +240,7 @@
         }
         return promise;
       };
+      target[methodName].original = wrappedMethod;
     });
     return target;
   }

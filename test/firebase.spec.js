@@ -41,7 +41,7 @@ describe('Firebase', function() {
     it('should intercept auth errors with a user callback', function(done) {
       var errorCallback = jasmine.createSpy();
       globalCallback = Firebase.onError(function() {
-        expect(errorCallback).toHaveBeenCalled();
+        expect(errorCallback.calls.count()).toBe(1);
         done();
       });
       fb.auth('', errorCallback);
@@ -55,7 +55,7 @@ describe('Firebase', function() {
     it('should intercept authWithCustomToken errors with a user callback', function(done) {
       var errorCallback = jasmine.createSpy();
       globalCallback = Firebase.onError(function() {
-        expect(errorCallback).toHaveBeenCalled();
+        expect(errorCallback.calls.count()).toBe(1);
         done();
       });
       fb.authWithCustomToken('', errorCallback);
@@ -69,7 +69,7 @@ describe('Firebase', function() {
     it('should intercept authAnonymously errors with a user callback', function(done) {
       var errorCallback = jasmine.createSpy();
       globalCallback = Firebase.onError(function() {
-        expect(errorCallback).toHaveBeenCalled();
+        expect(errorCallback.calls.count()).toBe(1);
         done();
       });
       fb.authAnonymously(errorCallback);
@@ -83,7 +83,7 @@ describe('Firebase', function() {
     it('should intercept authWithPassword errors with a user callback', function(done) {
       var errorCallback = jasmine.createSpy();
       globalCallback = Firebase.onError(function() {
-        expect(errorCallback).toHaveBeenCalled();
+        expect(errorCallback.calls.count()).toBe(1);
         done();
       });
       fb.authWithPassword({email: 'foo@example.com', password: 'bar'}, errorCallback);
@@ -97,7 +97,7 @@ describe('Firebase', function() {
     it('should intercept authWithOAuthPopup errors with a user callback', function(done) {
       var errorCallback = jasmine.createSpy();
       globalCallback = Firebase.onError(function() {
-        expect(errorCallback).toHaveBeenCalled();
+        expect(errorCallback.calls.count()).toBe(1);
         done();
       });
       fb.authWithOAuthPopup('twitter', errorCallback);
@@ -113,7 +113,7 @@ describe('Firebase', function() {
     it('should intercept authWithOAuthToken errors with a user callback', function(done) {
       var errorCallback = jasmine.createSpy();
       globalCallback = Firebase.onError(function() {
-        expect(errorCallback).toHaveBeenCalled();
+        expect(errorCallback.calls.count()).toBe(1);
         done();
       });
       fb.authWithOAuthToken('twitter', '', errorCallback);
@@ -127,7 +127,7 @@ describe('Firebase', function() {
     it('should intercept set errors with a user callback', function(done) {
       var errorCallback = jasmine.createSpy();
       globalCallback = Firebase.onError(function() {
-        expect(errorCallback).toHaveBeenCalled();
+        expect(errorCallback.calls.count()).toBe(1);
         done();
       });
       fb.child('forbidden').set(false, errorCallback);
@@ -151,7 +151,7 @@ describe('Firebase', function() {
     it('should intercept update errors with a user callback', function(done) {
       var errorCallback = jasmine.createSpy();
       globalCallback = Firebase.onError(function(error) {
-        expect(errorCallback).toHaveBeenCalled();
+        expect(errorCallback.calls.count()).toBe(1);
         done();
       });
       fb.child('forbidden/foo').update({bar: false}, errorCallback);
@@ -165,7 +165,7 @@ describe('Firebase', function() {
     it('should intercept remove errors with a user callback', function(done) {
       var errorCallback = jasmine.createSpy();
       globalCallback = Firebase.onError(function() {
-        expect(errorCallback).toHaveBeenCalled();
+        expect(errorCallback.calls.count()).toBe(1);
         done();
       });
       fb.child('forbidden').remove(errorCallback);
@@ -179,7 +179,7 @@ describe('Firebase', function() {
     it('should intercept push errors with a user callback', function(done) {
       var errorCallback = jasmine.createSpy();
       globalCallback = Firebase.onError(function() {
-        expect(errorCallback).toHaveBeenCalled();
+        expect(errorCallback.calls.count()).toBe(1);
         done();
       });
       expect(fb.child('forbidden').push(42, errorCallback)).toEqual(jasmine.any(Firebase));
@@ -197,7 +197,7 @@ describe('Firebase', function() {
     it('should intercept setWithPriority errors with a user callback', function(done) {
       var errorCallback = jasmine.createSpy();
       globalCallback = Firebase.onError(function() {
-        expect(errorCallback).toHaveBeenCalled();
+        expect(errorCallback.calls.count()).toBe(1);
         done();
       });
       fb.child('forbidden').setWithPriority(false, 42, errorCallback);
@@ -211,7 +211,7 @@ describe('Firebase', function() {
     it('should intercept setPriority errors with a user callback', function(done) {
       var errorCallback = jasmine.createSpy();
       globalCallback = Firebase.onError(function() {
-        expect(errorCallback).toHaveBeenCalled();
+        expect(errorCallback.calls.count()).toBe(1);
         done();
       });
       fb.child('forbidden').setPriority(42, errorCallback);
@@ -229,7 +229,7 @@ describe('Firebase', function() {
         // and signals its own global error first.  We ignore everything until the errorCallback has
         // been invoked -- at worst, the test will time out.
         if (!errorCallback.calls.any()) return;
-        expect(errorCallback).toHaveBeenCalled();
+        expect(errorCallback.calls.count()).toBe(1);
         done();
       });
       fb.child('forbidden').transaction(function() {return null;}, errorCallback);
@@ -245,7 +245,7 @@ describe('Firebase', function() {
     it('should intercept on errors with a user callback', function(done) {
       var errorCallback = jasmine.createSpy();
       globalCallback = Firebase.onError(function() {
-        expect(errorCallback).toHaveBeenCalled();
+        expect(errorCallback.calls.count()).toBe(1);
         done();
       });
       fb.child('forbidden').on('value', noop, errorCallback);
@@ -327,7 +327,7 @@ describe('Firebase', function() {
     it('should intercept once errors with a user callback', function(done) {
       var errorCallback = jasmine.createSpy('errorCallback');
       globalCallback = Firebase.onError(function() {
-        expect(errorCallback).toHaveBeenCalled();
+        expect(errorCallback.calls.count()).toBe(1);
         done();
       });
       fb.child('forbidden').once('value', noop, errorCallback);
@@ -391,7 +391,7 @@ describe('Firebase', function() {
     it('should intercept onDisconnect.set errors with a user callback', function(done) {
       var errorCallback = jasmine.createSpy('errorCallback');
       globalCallback = Firebase.onError(function() {
-        expect(errorCallback).toHaveBeenCalled();
+        expect(errorCallback.calls.count()).toBe(1);
         done();
       });
       fb.child('forbidden').onDisconnect().set(false, errorCallback);
@@ -405,7 +405,7 @@ describe('Firebase', function() {
     it('should intercept onDisconnect.setWithPriority errors with a user callback', function(done) {
       var errorCallback = jasmine.createSpy('errorCallback');
       globalCallback = Firebase.onError(function() {
-        expect(errorCallback).toHaveBeenCalled();
+        expect(errorCallback.calls.count()).toBe(1);
         done();
       });
       fb.child('forbidden').onDisconnect().setWithPriority(false, 42, errorCallback);
@@ -419,7 +419,7 @@ describe('Firebase', function() {
     it('should intercept onDisconnect.update errors with a user callback', function(done) {
       var errorCallback = jasmine.createSpy('errorCallback');
       globalCallback = Firebase.onError(function() {
-        expect(errorCallback).toHaveBeenCalled();
+        expect(errorCallback.calls.count()).toBe(1);
         done();
       });
       fb.child('forbidden').onDisconnect().update({foo: false}, errorCallback);
@@ -433,7 +433,7 @@ describe('Firebase', function() {
     it('should intercept onDisconnect.remove errors with a user callback', function(done) {
       var errorCallback = jasmine.createSpy('errorCallback');
       globalCallback = Firebase.onError(function() {
-        expect(errorCallback).toHaveBeenCalled();
+        expect(errorCallback.calls.count()).toBe(1);
         done();
       });
       fb.child('forbidden').onDisconnect().remove(errorCallback);
@@ -451,9 +451,11 @@ describe('Firebase', function() {
         return {then: function(fn) {return fn(simulatorToken);}};
       });
       var errorCallback = jasmine.createSpy();
-      globalCallback = Firebase.onError(function() {
-        expect(errorCallback).toHaveBeenCalled();
-        expect(errorCallback.calls.argsFor(0)[0].extra.debug).toMatch(/Write was denied/);
+      globalCallback = Firebase.onError(function(error) {
+        expect(error.extra && error.extra.debug).toMatch(/Write was denied/);
+        expect(errorCallback.calls.count()).toBe(1);
+        var extra = errorCallback.calls.argsFor(0)[0].extra;
+        expect(extra && extra.debug).toMatch(/Write was denied/);
         Firebase.debugPermissionDeniedErrors(null);
         done();
       });
@@ -465,14 +467,44 @@ describe('Firebase', function() {
         return {then: function(fn) {return fn(simulatorToken);}};
       });
       var errorCallback = jasmine.createSpy();
-      globalCallback = Firebase.onError(function() {
-        expect(errorCallback).toHaveBeenCalled();
-        expect(errorCallback.calls.argsFor(0)[0].extra.debug).toMatch(/Read was denied/);
+      globalCallback = Firebase.onError(function(error) {
+        expect(error.extra && error.extra.debug).toMatch(/Read was denied/);
+        expect(errorCallback.calls.count()).toBe(1);
+        var extra = errorCallback.calls.argsFor(0)[0].extra;
+        expect(extra && extra.debug).toMatch(/Read was denied/);
         Firebase.debugPermissionDeniedErrors(null);
         done();
       });
       fb.child('forbidden').on('value', noop, errorCallback);
     });
+
+    it('should be able to debug permission denied errors in queries', function(done) {
+      Firebase.debugPermissionDeniedErrors(function(uid) {
+        return {then: function(fn) {return fn(simulatorToken);}};
+      });
+      var errorCallback = jasmine.createSpy();
+      globalCallback = Firebase.onError(function(error) {
+        expect(error.extra && error.extra.debug).toMatch(/Read was denied/);
+        expect(errorCallback.calls.count()).toBe(1);
+        var extra = errorCallback.calls.argsFor(0)[0].extra;
+        expect(extra && extra.debug).toMatch(/Read was denied/);
+        Firebase.debugPermissionDeniedErrors(null);
+        done();
+      });
+      fb.child('forbidden').equalTo(null).on('value', noop, errorCallback);
+    });
+
+    it('should delay resolving promises when debugging permission denied errors', function(done) {
+      Firebase.debugPermissionDeniedErrors(function(uid) {
+        return {then: function(fn) {return fn(simulatorToken);}};
+      });
+      fb.child('forbidden').set(false).catch(function(error) {
+        expect(error.extra && error.extra.debug).toMatch(/Write was denied/);
+        Firebase.debugPermissionDeniedErrors(null);
+        done();
+      });
+    });
+
 
   });
 });
