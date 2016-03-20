@@ -167,7 +167,11 @@
                 var auth = ref.getAuth();
                 var simulatedFirebase;
                 simulationPromise = Promise.resolve().then(function() {
-                  return simulatedTokenGeneratorFn(auth && auth.uid || '');
+                  try {
+                    return simulatedTokenGeneratorFn(auth && auth.uid || '');
+                  } catch (e) {
+                    return Promise.reject(e);
+                  }
                 }).then(function(token) {
                   simulatedFirebase = new Firebase(
                     decodeURIComponent(target.toString()), 'firebase-on-error');
@@ -178,22 +182,24 @@
                   if (methodName === 'on') wrappedMethod = target.once.original || target.once;
                   var simulatedArgs = args.slice();
                   simulatedArgs[onCompleteArgIndex] = noop;
-                  return wrappedMethod.apply(simulatedFirebase, simulatedArgs);
+                  return wrappedMethod.apply(simulatedFirebase, simulatedArgs)
+                    .then(function() {
+                      error.extra.debug =
+                        'Unable to reproduce permission denied error in simulation';
+                    }, function(e) {
+                      var code = e.code || e.message;
+                      if (code && code.toLowerCase() === 'permission_denied') {
+                        error.extra.debug = consoleLogs.join('\n');
+                      } else {
+                        error.extra.debug = 'Got a different error in simulation: ' + e;
+                      }
+                    });
                 }).then(function() {
-                  error.extra.debug =
-                    'Unable to reproduce permission denied error in simulation';
-                }, function(e) {
-                  var code = e.code || e.message;
-                  if (code && code.toLowerCase() === 'permission_denied') {
-                    error.extra.debug = consoleLogs.join('\n');
-                  } else {
-                    error.extra.debug = 'Got a different error in simulation: ' + e;
-                  }
-                }).then(function() {
-                  simulatedFirebase.unauth();
+                  if (simulatedFirebase) simulatedFirebase.unauth();
                   finishCallback();
-                }).catch(function(e) {
+                }, function(e) {
                   error.extra.debug = 'Error running simulation: ' + e;
+                  if (simulatedFirebase) simulatedFirebase.unauth();
                   finishCallback();
                 }).then(function() {
                   return Promise.reject(error);
