@@ -91,7 +91,11 @@
       console.log = function() {
         var message = Array.prototype.join.call(arguments, ' ');
         if (/^(FIREBASE: \n?)+/.test(message)) {
-          consoleLogs.push(message.replace(/^(FIREBASE: \n?)+/, ''));
+          consoleLogs.push(message
+            .replace(/^(FIREBASE: \n?)+/, '')
+            .replace(/:\.(read|write|validate):(.{30,})/g, function(match, g1, g2) {
+              return ':.' + g1 + ':' + g2.slice(0, 30) + '...';
+            }));
         }
         return originalLog.apply(console, arguments);
       };
