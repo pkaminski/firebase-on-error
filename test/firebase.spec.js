@@ -1,7 +1,7 @@
 describe('Firebase', function() {
   'use strict';
   var fb;
-  var simulatorToken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzaW11bGF0ZSI6dHJ1ZSwiZGVidWciOnRydWUsInYiOjAsImQiOnsidWlkIjoidGVzdCJ9LCJpYXQiOjE0NTgyOTcyOTR9.mWY_83jcMcome_9Dz-Yg9Ms4dpswaFIvp869T9EmZeU';
+  var simulatorToken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE0NTg5NTQ1MzI3MTgsInNpbXVsYXRlIjp0cnVlLCJkZWJ1ZyI6dHJ1ZSwidiI6MCwiZCI6eyJ1aWQiOiJ0ZXN0In0sImlhdCI6MTQ1ODYzOTE3Mn0.b5wmq5HvfodZfaWRfVZlbrqiwSzEV9EUt3Hu9BU3S4o';
   function noop() {}
 
   beforeEach(function() {
@@ -236,6 +236,13 @@ describe('Firebase', function() {
     });
 
     // TODO: test user/password methods
+
+    it('should return on function', function(done) {
+      var onResult = fb.child('allowed').on('value', noop);
+      expect(onResult).toBe(noop);
+      fb.child('allowed').off('value', noop);
+      done();
+    });
 
     it('should intercept on errors', function(done) {
       globalCallback = Firebase.onError(done);
