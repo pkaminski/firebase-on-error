@@ -3,7 +3,7 @@
 
   Firebase.IGNORE_ERROR = function() {return Firebase.IGNORE_ERROR;};  // unique marker object
   var errorCallbacks = [], slowWriteCallbackRecords = [];
-  var simulatedTokenGeneratorFn, maxSimulationDuration = 5000, simulationInProgress = false;
+  var simulatedTokenGeneratorFn, maxSimulationDuration = 5000, simulationQueue;
   var consoleLogs = [], consoleIntercepted = false;
   var interceptInPlace = false;
   var noop = function() {};
@@ -159,56 +159,54 @@
             var code = error.code || error.message;
             if (window.Promise && simulatedTokenGeneratorFn && maxSimulationDuration && code &&
                 code.toLowerCase() === 'permission_denied') {
-              if (simulationInProgress) {
-                error.extra.debug = 'Another simulated call was already in progress';
-              } else {
-                simulationTimeout = setTimeout(function() {
-                  if (!error.extra.debug) error.extra.debug = 'Simulated call timed out';
-                  finishCallback();
-                }, maxSimulationDuration);
-                simulationInProgress = true;
-                consoleLogs = [];
-                var auth = ref.getAuth();
-                var simulatedFirebase;
-                simulationPromise = Promise.resolve().then(function() {
-                  try {
-                    return simulatedTokenGeneratorFn(auth && auth.uid || '');
-                  } catch (e) {
-                    return Promise.reject(e);
-                  }
-                }).then(function(token) {
-                  simulatedFirebase = new Firebase(
-                    decodeURIComponent(target.toString()), 'firebase-on-error');
-                  simulatedFirebase.unauth();
-                  return simulatedFirebase.authWithCustomToken.original.call(
-                    simulatedFirebase, token, noop, {remember: 'none'});
-                }).then(function() {
-                  if (methodName === 'on') wrappedMethod = target.once.original || target.once;
-                  var simulatedArgs = args.slice();
-                  simulatedArgs[onCompleteArgIndex] = noop;
-                  return wrappedMethod.apply(simulatedFirebase, simulatedArgs)
-                    .then(function() {
-                      error.extra.debug =
-                        'Unable to reproduce permission denied error in simulation';
-                    }, function(e) {
-                      var code = e.code || e.message;
-                      if (code && code.toLowerCase() === 'permission_denied') {
-                        error.extra.debug = consoleLogs.join('\n');
-                      } else {
-                        error.extra.debug = 'Got a different error in simulation: ' + e;
-                      }
-                    });
-                }).then(function() {
-                  if (simulatedFirebase) simulatedFirebase.unauth();
-                  finishCallback();
-                }, function(e) {
-                  error.extra.debug = 'Error running simulation: ' + e;
-                  if (simulatedFirebase) simulatedFirebase.unauth();
-                  finishCallback();
-                }).then(function() {
-                  return Promise.reject(error);
-                });
-              }
+              simulationTimeout = setTimeout(function() {
+                if (!error.extra.debug) error.extra.debug = 'Simulated call timed out';
+                finishCallback();
+              }, maxSimulationDuration);
+              var auth = ref.getAuth();
+              var simulatedFirebase;
+              simulationPromise = Promise.resolve().then(function() {
+                try {
+                  return simulatedTokenGeneratorFn(auth && auth.uid || '');
+                } catch (e) {
+                  return Promise.reject(e);
+                }
+              }).then(function(token) {
+                simulationQueue = (simulationQueue || Promise.resolve())
+                  .catch(function() {})
+                  .then(function() {
+                    consoleLogs = [];
+                    simulatedFirebase = new Firebase(
+                      decodeURIComponent(target.toString()), 'firebase-on-error');
+                    simulatedFirebase.unauth();
+                    return simulatedFirebase.authWithCustomToken.original.call(
+                      simulatedFirebase, token, noop, {remember: 'none'});
+                  }).then(function() {
+                    if (methodName === 'on') wrappedMethod = target.once.original || target.once;
+                    var simulatedArgs = args.slice();
+                    simulatedArgs[onCompleteArgIndex] = noop;
+                    return wrappedMethod.apply(simulatedFirebase, simulatedArgs)
+                      .then(function() {
+                        error.extra.debug =
+                          'Unable to reproduce permission denied error in simulation';
+                      }, function(e) {
+                        var code = e.code || e.message;
+                        if (code && code.toLowerCase() === 'permission_denied') {
+                          error.extra.debug = consoleLogs.join('\n');
+                        } else {
+                          error.extra.debug = 'Got a different error in simulation: ' + e;
+                        }
+                      });
+                  });
+                return simulationQueue;
+              }).then(function() {
+                finishCallback();
+              }, function(e) {
+                error.extra.debug = 'Error running simulation: ' + e;
+                finishCallback();
+              }).then(function() {
+                return Promise.reject(error);
+              });
             }
           }
 
@@ -218,7 +216,6 @@
             if (simulationTimeout) {
               clearTimeout(simulationTimeout);
               simulationTimeout = null;
-              simulationInProgress = false;
             }
             if (callbackFinished) return;
             callbackFinished = true;
