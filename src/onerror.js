@@ -6,7 +6,6 @@
   var simulatedTokenGeneratorFn, maxSimulationDuration = 5000, simulationQueue;
   var consoleLogs = [], consoleIntercepted = false;
   var interceptInPlace = false;
-  var noop = function() {};
 
   /**
    * Registers a global callback that will be invoked whenever any Firebase API indicates that an
@@ -111,7 +110,7 @@
       target[methodName] = function() {
         var onComplete = arguments[onCompleteArgIndex];
         var hasOnComplete = typeof onComplete === 'function' || typeof onComplete === 'undefined';
-        if (typeof onComplete !== 'function') onComplete = noop;
+        if (typeof onComplete !== 'function') onComplete = function() {};
         var args = Array.prototype.slice.call(arguments);
         var target = this;
         var simulationPromise;
@@ -181,12 +180,13 @@
                       decodeURIComponent(target.toString()), 'firebase-on-error');
                     simulatedFirebase.unauth();
                     return simulatedFirebase.authWithCustomToken.original.call(
-                      simulatedFirebase, token, noop, {remember: 'none'});
+                      simulatedFirebase, token, function() {}, {remember: 'none'});
                   }).then(function() {
-                    if (methodName === 'on') wrappedMethod = target.once.original || target.once;
+                    var simulatedMethod = methodName === 'on' ?
+                      target.once.original || target.once : wrappedMethod;
                     var simulatedArgs = args.slice();
-                    simulatedArgs[onCompleteArgIndex] = noop;
-                    return wrappedMethod.apply(simulatedFirebase, simulatedArgs)
+                    simulatedArgs[onCompleteArgIndex] = function() {};
+                    return simulatedMethod.apply(simulatedFirebase, simulatedArgs)
                       .then(function() {
                         error.extra.debug =
                           'Unable to reproduce permission denied error in simulation';
