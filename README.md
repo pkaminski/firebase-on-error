@@ -60,8 +60,12 @@ Firebase.offSlowWrite = function(callback) {...}
  * @param  {Number} maxSimulatedCallDuration The maximum duration in milliseconds to allow for
  *     the simulated call to complete.  The callback and promise on the original call won't be
  *     resolved until the simulation finishes one way or another.  Defaults to 5 seconds.
+ * @param  {Function} callFilter A function that decides which failed calls to debug.  It gets
+ *     passed the target reference, the method name, and the args, and returns true to simulate
+ *     the call with debugging turned on, and false to let it go.  By default, all failed calls
+ *     get debugged.
  */
 Firebase.debugPermissionDeniedErrors = function(
-    simulatedTokenGenerator, maxSimulatedCallDuration) {...}
+    simulatedTokenGenerator, maxSimulatedCallDuration, callFilter) {...}
 
 ```

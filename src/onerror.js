@@ -3,7 +3,7 @@
 
   Firebase.IGNORE_ERROR = function() {return Firebase.IGNORE_ERROR;};  // unique marker object
   var errorCallbacks = [], slowWriteCallbackRecords = [];
-  var simulatedTokenGeneratorFn, maxSimulationDuration = 5000, simulationQueue;
+  var simulatedTokenGeneratorFn, maxSimulationDuration = 5000, simulationQueue, simulationFilter;
   var consoleLogs = [], consoleIntercepted = false;
   var interceptInPlace = false;
 
@@ -79,12 +79,17 @@
    * @param  {Number} maxSimulatedCallDuration The maximum duration in milliseconds to allow for
    *     the simulated call to complete.  The callback and promise on the original call won't be
    *     resolved until the simulation finishes one way or another.  Defaults to 5 seconds.
+   * @param  {Function} callFilter A function that decides which failed calls to debug.  It gets
+   *     passed the target reference, the method name, and the args, and returns true to simulate
+   *     the call with debugging turned on, and false to let it go.  By default, all failed calls
+   *     get debugged.
    */
   Firebase.debugPermissionDeniedErrors = function(
-      simulatedTokenGenerator, maxSimulatedCallDuration) {
+      simulatedTokenGenerator, maxSimulatedCallDuration, callFilter) {
     interceptErrorCallbacks();
     simulatedTokenGeneratorFn = simulatedTokenGenerator;
     if (maxSimulatedCallDuration) maxSimulationDuration = maxSimulatedCallDuration;
+    simulationFilter = callFilter || function() {return true;};
     if (!consoleIntercepted) {
       var originalLog = console.log;
       console.log = function() {
@@ -158,7 +163,8 @@
 
             var code = error.code || error.message;
             if (window.Promise && simulatedTokenGeneratorFn && maxSimulationDuration && code &&
-                code.toLowerCase() === 'permission_denied') {
+                code.toLowerCase() === 'permission_denied' &&
+                simulationFilter(target, methodName, args)) {
               simulationTimeout = setTimeout(function() {
                 if (!error.extra.debug) error.extra.debug = 'Simulated call timed out';
                 finishCallback();
