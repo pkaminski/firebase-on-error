@@ -96,8 +96,9 @@
             .replace(/:\.(read|write|validate):(.{30,})/g, function(match, g1, g2) {
               return ':.' + g1 + ':' + g2.slice(0, 30) + '...';
             }));
+        } else {
+          return originalLog.apply(console, arguments);
         }
-        return originalLog.apply(console, arguments);
       };
       consoleIntercepted = true;
     }
