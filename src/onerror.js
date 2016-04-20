@@ -1,6 +1,7 @@
 (function() {
   'use strict';
 
+  var glob = typeof global !== 'undefined' ? global : window;
   Firebase.IGNORE_ERROR = function() {return Firebase.IGNORE_ERROR;};  // unique marker object
   var errorCallbacks = [], slowWriteCallbackRecords = [];
   var simulatedTokenGeneratorFn, maxSimulationDuration = 5000, simulationQueue, simulationFilter;
@@ -162,7 +163,7 @@
             error.extra = extra;
 
             var code = error.code || error.message;
-            if (window.Promise && simulatedTokenGeneratorFn && maxSimulationDuration && code &&
+            if (glob.Promise && simulatedTokenGeneratorFn && maxSimulationDuration && code &&
                 code.toLowerCase() === 'permission_denied' &&
                 simulationFilter(target, methodName, args)) {
               simulationTimeout = setTimeout(function() {
@@ -238,13 +239,13 @@
         while (args.length < onCompleteArgIndex) args.push(void 0);
         args.splice(onCompleteArgIndex, hasOnComplete ? 1 : 0, wrappedOnComplete);
         var promise = wrappedMethod.apply(this, args);
-        if (window.Promise && promise && promise.catch) {
+        if (glob.Promise && promise && promise.catch) {
           promise = promise.catch(function(e) {
             if (simulationPromise) return simulationPromise;
             return Promise.reject(e);
           });
         }
-        if (window.Promise && promise && promise.then && !promise.finally) {
+        if (glob.Promise && promise && promise.then && !promise.finally) {
           var proto = Object.getPrototypeOf(promise);
           if (proto.then) {
             proto.finally = finallyPolyfill;
