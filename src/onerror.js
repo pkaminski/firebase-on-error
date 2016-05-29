@@ -41,7 +41,8 @@
    * @param  {number} timeout The number of milliseconds a write function is allowed to run before
    *     it's added to the count of slow ones.
    * @param  {Function} callback The callback to invoke whenever the count of outstanding slow calls
-   *     changes.  The current count is passed as the only argument to the callback.
+   *     changes.  The arguments to the callback are the current count, +1 or -1 to indicate whether
+   *     the count was just incremented or decremented, and a short description of the stalled call.
    * @return {Function} The callback function, for convenience.
    */
   Firebase.onSlowWrite = function(timeout, callback) {
@@ -119,6 +120,10 @@
         if (typeof onComplete !== 'function') onComplete = function() {};
         var args = Array.prototype.slice.call(arguments);
         var target = this;
+        var ref = (target.ref ? target.ref() : target);
+        var path = decodeURIComponent(
+          ref.toString().slice(ref.root ? ref.root().toString().length - 1 : 0));
+        var callDescription = methodName + '(' + path + ')';
         var simulationPromise;
         var timeouts;
         if (isWrite) {
@@ -126,7 +131,7 @@
             var timeout = {counted: false, record: record};
             timeout.handle = setTimeout(function() {
               timeout.counted = true;
-              timeout.record.callback(++timeout.record.count);
+              timeout.record.callback(++timeout.record.count, 1, callDescription);
             }, record.timeout);
             return timeout;
           });
@@ -139,7 +144,9 @@
           if (isWrite) {
             timeouts.forEach(function(timeout) {
               clearTimeout(timeout.handle);
-              if (timeout.counted) timeout.record.callback(--timeout.record.count);
+              if (timeout.counted) {
+                timeout.record.callback(--timeout.record.count, -1, callDescription);
+              }
             });
           }
 
@@ -147,10 +154,7 @@
             if (typeof error === 'string' || error instanceof String) {
               error = new Error(error);
             }
-            var ref = (target.ref ? target.ref() : target);
-            var path = decodeURIComponent(
-              ref.toString().slice(ref.root ? ref.root().toString().length - 1 : 0));
-            var description = 'Firebase ' + methodName + '(' + path + '): ' + error.message;
+            var description = 'Firebase ' + callDescription + ': ' + error.message;
             var extra = {description: description, recoverable: error.recoverable};
             args.forEach(function(arg, i) {
               if (typeof arg === 'function') return;
