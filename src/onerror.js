@@ -128,8 +128,9 @@
         var timeouts;
         if (isWrite) {
           timeouts = slowWriteCallbackRecords.map(function(record) {
-            var timeout = {counted: false, record: record};
+            var timeout = {counted: false, canceled: false, record: record};
             timeout.handle = setTimeout(function() {
+              if (timeout.canceled) return;
               timeout.counted = true;
               timeout.record.callback(++timeout.record.count, 1, callDescription);
             }, record.timeout);
@@ -143,6 +144,7 @@
 
           if (isWrite) {
             timeouts.forEach(function(timeout) {
+              timeout.canceled = true;
               clearTimeout(timeout.handle);
               if (timeout.counted) {
                 timeout.record.callback(--timeout.record.count, -1, callDescription);
