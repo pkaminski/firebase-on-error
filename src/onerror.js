@@ -283,7 +283,7 @@
       if (typeof value !== 'undefined' && value !== null) {
         var onComplete = arguments[onCompleteArgIndex];
         var hasOnComplete = typeof onComplete === 'function' || typeof onComplete === 'undefined';
-        if (typeof onComplete !== 'function') onComplete = noop;
+        if (typeof onComplete !== 'function') onComplete = function() {};
         args.splice(onCompleteArgIndex, hasOnComplete ? 1 : 0, onComplete);
       }
       return wrappedMethod.apply(this, args);
