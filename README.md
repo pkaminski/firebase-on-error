@@ -34,7 +34,8 @@ Firebase.offError = function(callback) {...}
  *     it's added to the count of slow ones.
  * @param  {Function} callback The callback to invoke whenever the count of outstanding slow calls
  *     changes.  The arguments to the callback are the current count, +1 or -1 to indicate whether
- *     the count was just incremented or decremented, and a short description of the stalled call.
+ *     the count was just incremented or decremented, a short description of the stalled call, and
+ *     the monotonously increasing serial number of the write.
  * @return {Function} The callback function, for convenience.
  */
 Firebase.onSlowWrite = function(timeout, callback) {...}

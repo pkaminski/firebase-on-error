@@ -3,7 +3,7 @@
 
   var glob = typeof global !== 'undefined' ? global : window;
   Firebase.IGNORE_ERROR = function() {return Firebase.IGNORE_ERROR;};  // unique marker object
-  var errorCallbacks = [], slowWriteCallbackRecords = [];
+  var errorCallbacks = [], slowWriteCallbackRecords = [], writeCounter = 0;
   var simulatedTokenGeneratorFn, maxSimulationDuration = 5000, simulationQueue, simulationFilter;
   var consoleLogs = [], consoleIntercepted = false;
   var interceptInPlace = false;
@@ -126,13 +126,15 @@
         var callDescription = methodName + '(' + path + ')';
         var simulationPromise;
         var timeouts;
+        var writeSerial;
         if (isWrite) {
+          writeSerial = writeCounter++;
           timeouts = slowWriteCallbackRecords.map(function(record) {
             var timeout = {counted: false, canceled: false, record: record};
             timeout.handle = setTimeout(function() {
               if (timeout.canceled) return;
               timeout.counted = true;
-              timeout.record.callback(++timeout.record.count, 1, callDescription);
+              timeout.record.callback(++timeout.record.count, 1, callDescription, writeSerial);
             }, record.timeout);
             return timeout;
           });
@@ -147,7 +149,7 @@
               timeout.canceled = true;
               clearTimeout(timeout.handle);
               if (timeout.counted) {
-                timeout.record.callback(--timeout.record.count, -1, callDescription);
+                timeout.record.callback(--timeout.record.count, -1, callDescription, writeSerial);
               }
             });
           }
