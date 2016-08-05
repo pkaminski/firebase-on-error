@@ -97,11 +97,25 @@
       console.log = function() {
         var message = Array.prototype.join.call(arguments, ' ');
         if (/^(FIREBASE: \n?)+/.test(message)) {
-          consoleLogs.push(message
+          message = message
             .replace(/^(FIREBASE: \n?)+/, '')
-            .replace(/:\.(read|write|validate):(.{30,})/g, function(match, g1, g2) {
-              return ':.' + g1 + ':' + g2.slice(0, 30) + '...';
-            }));
+            .replace(/^\s+(.*?):\.(read|write|validate):.*/g, function(match, g1, g2) {
+              return ' ' + g2 + ' ' + g1;
+            });
+          if (/^\s+/.test(message)) {
+            var match = message.match(/^\s+=> (true|false)/);
+            if (match) {
+              consoleLogs[consoleLogs.length - 1] =
+                (match[1] === 'true' ? '   ' : ' X ') + consoleLogs[consoleLogs.length - 1];
+            } else {
+              if (consoleLogs.length && /^\s+/.test(consoleLogs[consoleLogs.length - 1])) {
+                consoleLogs.pop();
+              }
+              consoleLogs.push(message);
+            }
+          } else {
+            consoleLogs.push(message);
+          }
         } else {
           return originalLog.apply(console, arguments);
         }
