@@ -94,27 +94,33 @@
     simulationFilter = callFilter || function() {return true;};
     if (!consoleIntercepted) {
       var originalLog = console.log;
+      var lastTestIndex;
       console.log = function() {
         var message = Array.prototype.join.call(arguments, ' ');
         if (/^(FIREBASE: \n?)+/.test(message)) {
           message = message
             .replace(/^(FIREBASE: \n?)+/, '')
-            .replace(/^\s+(.*?):\.(read|write|validate):.*/g, function(match, g1, g2) {
+            .replace(/^\s+(.*?):(?:\.(read|write|validate):)?.*/g, function(match, g1, g2) {
+              g2 = g2 || 'read';
               return ' ' + g2 + ' ' + g1;
             });
           if (/^\s+/.test(message)) {
             var match = message.match(/^\s+=> (true|false)/);
             if (match) {
-              consoleLogs[consoleLogs.length - 1] =
-                (match[1] === 'true' ? '   ' : ' X ') + consoleLogs[consoleLogs.length - 1];
+              consoleLogs[lastTestIndex] =
+                (match[1] === 'true' ? ' \u2713' : ' \u2717') + consoleLogs[lastTestIndex];
+              lastTestIndex = undefined;
             } else {
-              if (consoleLogs.length && /^\s+/.test(consoleLogs[consoleLogs.length - 1])) {
-                consoleLogs.pop();
-              }
+              if (lastTestIndex === consoleLogs.length - 1) consoleLogs.pop();
               consoleLogs.push(message);
+              lastTestIndex = consoleLogs.length - 1;
             }
+          } else if (/^\d+:\d+: /.test(message)) {
+            consoleLogs.push('   ' + message);
           } else {
+            if (lastTestIndex === consoleLogs.length - 1) consoleLogs.pop();
             consoleLogs.push(message);
+            lastTestIndex = undefined;
           }
         } else {
           return originalLog.apply(console, arguments);
