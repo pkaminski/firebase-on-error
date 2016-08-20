@@ -100,7 +100,7 @@
         if (/^(FIREBASE: \n?)+/.test(message)) {
           message = message
             .replace(/^(FIREBASE: \n?)+/, '')
-            .replace(/^\s+(.*?):(?:\.(read|write|validate):)?.*/g, function(match, g1, g2) {
+            .replace(/^\s+([^.]*):(?:\.(read|write|validate):)?.*/g, function(match, g1, g2) {
               g2 = g2 || 'read';
               return ' ' + g2 + ' ' + g1;
             });
