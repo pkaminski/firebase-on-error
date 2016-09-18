@@ -147,6 +147,7 @@
         var simulationPromise;
         var timeouts;
         var writeSerial;
+        var transactionResult;
         if (isWrite) {
           writeSerial = writeCounter++;
           timeouts = slowWriteCallbackRecords.map(function(record) {
@@ -220,11 +221,27 @@
                     var simulatedMethod = methodName === 'on' ?
                       target.once.original || target.once : wrappedMethod;
                     var simulatedArgs = args.slice();
+                    var secondCheck;
                     simulatedArgs[onCompleteArgIndex] = function() {};
+                    if (methodName === 'transaction') {
+                      // A simulated transaction call will execute the update function (so we want
+                      // to override it to prevent spurious errors) but won't actually attempt to
+                      // write the value (so we explicitly invoke set with the failed transaction's
+                      // return value to compensate).
+                      simulatedArgs[0] = function() {return transactionResult;};
+                      var set = target.set.original || target.set;
+                      secondCheck = function() {
+                        return set.call(simulatedFirebase, transactionResult);
+                      };
+                    }
                     return simulatedMethod.apply(simulatedFirebase, simulatedArgs)
                       .then(function() {
+                        if (secondCheck) return secondCheck();
+                      })
+                      .then(function() {
                         error.extra.debug =
-                          'Unable to reproduce permission denied error in simulation';
+                          'Unable to reproduce permission denied error in simulation\n' +
+                          consoleLogs.join('\n');
                       }, function(e) {
                         var code = e.code || e.message;
                         if (code && code.toLowerCase() === 'permission_denied') {
@@ -266,6 +283,13 @@
 
         while (args.length < onCompleteArgIndex) args.push(void 0);
         args.splice(onCompleteArgIndex, hasOnComplete ? 1 : 0, wrappedOnComplete);
+        if (methodName === 'transaction') {
+          var originalUpdateFunction = args[0];
+          args[0] = function(value) {
+            transactionResult = originalUpdateFunction(value);
+            return transactionResult;
+          };
+        }
         var promise = wrappedMethod.apply(this, args);
         if (glob.Promise && promise && promise.catch) {
           promise = promise.catch(function(e) {
