@@ -1,8 +1,8 @@
 (function() {
   'use strict';
+  /* globals Promise */
 
   var glob = typeof global !== 'undefined' ? global : window;
-  Firebase.IGNORE_ERROR = function() {return Firebase.IGNORE_ERROR;};  // unique marker object
   var errorCallbacks = [], slowWriteCallbackRecords = [], writeCounter = 0;
   var simulatedTokenGeneratorFn, maxSimulationDuration = 5000, simulationQueue, simulationFilter;
   var consoleLogs = [], consoleIntercepted = false;
@@ -10,8 +10,10 @@
 
   /**
    * Registers a global callback that will be invoked whenever any Firebase API indicates that an
-   * error occurred, unless your onComplete function for that call returns (or is) IGNORE_ERROR.
-   * Errors that occur on calls made before the first callback is registered will not be captured.
+   * error occurred.  The error callback gets invoked after the operation's own callback (if any),
+   * and after the operation's promise is rejected, giving you the chance to "cancel" the error by
+   * setting some property on it.  Errors that occur on calls made before the first callback is
+   * registered will not be captured.
    * @param  {Function} callback The function to call back when an error occurs.  It will be passed
    *     the Firebase Error, the reference (or query or onDisconnect instance), the method name, and
    *     the arguments passed to the Firebase function call as arguments.  The error will be
@@ -272,12 +274,14 @@
             }
             if (callbackFinished) return;
             callbackFinished = true;
-            var onCompleteCallbackResult = onComplete.apply(self, onCompleteArgs);
-            if (error && onCompleteCallbackResult !== Firebase.IGNORE_ERROR) {
-              errorCallbacks.forEach(function(callback) {
-                callback(error, target, methodName, args);
-              });
+            if (error) {
+              setTimeout(function() {
+                errorCallbacks.forEach(function(callback) {
+                  callback(error, target, methodName, args);
+                });
+              }, 0);
             }
+            onComplete.apply(self, onCompleteArgs);
           }
         }
 
