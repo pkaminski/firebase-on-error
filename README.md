@@ -1,6 +1,8 @@
 firebase-on-error
 =================
 
+[![Project Status: Inactive - The project has reached a stable, usable state but is no longer being actively developed; support/maintenance will be provided as time allows.](http://www.repostatus.org/badges/latest/inactive.svg)](http://www.repostatus.org/#inactive)
+
 This module allows you to register callbacks to be notified when any Firebase operation reports an error.  This is useful when your app has no error recovery procedure beyond asking the user to reload the page (which is not a terrible approach, since Firebase is pretty reliable!).  You can also register callbacks to be notified when a write is being slow, so you can warn the user that their connection is bad and not all changes have yet been saved.
 
 If you have a server to issue simulation auth tokens, you can also automatically get security rules debugging information attached to any permission denied exception, with no performance or bandwidth penalty to your overall app.
