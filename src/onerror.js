@@ -96,7 +96,7 @@
     simulationFilter = callFilter || function() {return true;};
     if (!consoleIntercepted) {
       var originalLog = console.log;
-      var lastTestIndex;
+      var lastTestIndex, lastPath;
       console.log = function() {
         var message = Array.prototype.join.call(arguments, ' ');
         if (/^(FIREBASE: \n?)+/.test(message)) {
@@ -104,6 +104,19 @@
             .replace(/^(FIREBASE: \n?)+/, '')
             .replace(/^\s+([^.]*):(?:\.(read|write|validate):)?.*/g, function(match, g1, g2) {
               g2 = g2 || 'read';
+              if (g2 === 'validate') g2 = 'value';
+              var nextPath = g1;
+              if (lastPath && lastPath !== '/') {
+                if (g1.startsWith(lastPath + '/')) {
+                  g1 = './' + g1.slice(lastPath.length + 1);
+                } else {
+                  lastPath = lastPath.replace(/\/[^/]+$/, '');
+                  if (g1.startsWith(lastPath + '/')) {
+                    g1 = '../' + g1.slice(lastPath.length + 1);
+                  }
+                }
+              }
+              lastPath = nextPath;
               return ' ' + g2 + ' ' + g1;
             });
           if (/^\s+/.test(message)) {
@@ -123,6 +136,7 @@
             if (lastTestIndex === consoleLogs.length - 1) consoleLogs.pop();
             consoleLogs.push(message);
             lastTestIndex = undefined;
+            lastPath = null;
           }
         } else {
           return originalLog.apply(console, arguments);
