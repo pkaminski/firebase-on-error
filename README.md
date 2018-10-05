@@ -1,7 +1,11 @@
 firebase-on-error
 =================
 
-[![Project Status: Inactive - The project has reached a stable, usable state but is no longer being actively developed; support/maintenance will be provided as time allows.](http://www.repostatus.org/badges/latest/inactive.svg)](http://www.repostatus.org/#inactive)
+[![Project Status: Unsupported – The project has reached a stable, usable state but the author(s) have ceased all work on it. A new maintainer may be desired.](https://www.repostatus.org/badges/latest/unsupported.svg)](https://www.repostatus.org/#unsupported)
+
+Functionality from this module has mostly moved to [pkaminski/firefight](https://github.com/pkaminski/firefight) and [pkaminski/firetruss](https://github.com/pkaminski/firetruss).  If you still need to deal with Firebase SDK 2.x, though, this module is likely your best bet.
+
+---
 
 This module allows you to register callbacks to be notified when any Firebase operation reports an error.  This is useful when your app has no error recovery procedure beyond asking the user to reload the page (which is not a terrible approach, since Firebase is pretty reliable!).  You can also register callbacks to be notified when a write is being slow, so you can warn the user that their connection is bad and not all changes have yet been saved.
 
